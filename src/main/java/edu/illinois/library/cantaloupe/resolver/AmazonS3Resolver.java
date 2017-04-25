@@ -5,6 +5,7 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.S3ClientOptions;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
@@ -24,6 +25,9 @@ import javax.imageio.stream.ImageInputStream;
 import javax.script.ScriptException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+
+import static com.amazonaws.services.s3.S3ClientOptions.DEFAULT_CHUNKED_ENCODING_DISABLED;
+import static com.amazonaws.services.s3.S3ClientOptions.DEFAULT_PATH_STYLE_ACCESS;
 
 /**
  * <p>Maps an identifier to an <a href="https://aws.amazon.com/s3/">Amazon
@@ -75,6 +79,10 @@ class AmazonS3Resolver extends AbstractResolver implements StreamResolver {
     static final String LOOKUP_STRATEGY_CONFIG_KEY =
             "AmazonS3Resolver.lookup_strategy";
     static final String SECRET_KEY_CONFIG_KEY = "AmazonS3Resolver.secret_key";
+    static final String PATH_STYLE_CONFIG_KEY = 
+            "AmazonS3Resolver.path_style_access";
+    static final String DISABLE_CHUNKED_ENCODING_CONFIG_KEY = 
+            "AmazonS3Resolver.disable_chunked_encoding";
 
     static final String GET_KEY_DELEGATE_METHOD =
             "AmazonS3Resolver::get_object_key";
@@ -118,9 +126,17 @@ class AmazonS3Resolver extends AbstractResolver implements StreamResolver {
                     logger.info("Using region: {}", region);
                     client.setRegion(region);
                 }
+                
+                client.setS3ClientOptions(createS3ClientOptions(config));
             }
         }
         return client;
+    }
+
+    private static S3ClientOptions createS3ClientOptions(Configuration config) {
+        return new S3ClientOptions()
+                .withPathStyleAccess(config.getBoolean(PATH_STYLE_CONFIG_KEY, DEFAULT_PATH_STYLE_ACCESS))
+                .withChunkedEncodingDisabled(config.getBoolean(DISABLE_CHUNKED_ENCODING_CONFIG_KEY, DEFAULT_CHUNKED_ENCODING_DISABLED));
     }
 
     @Override
